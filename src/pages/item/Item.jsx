@@ -1,6 +1,6 @@
 import React from 'react';
 import './item.css';
-import creator from '../../assets/seller2.png';
+
 import { useParams, Link } from 'react-router-dom';
 import { MOCK_ITEMS } from '../../data/mockData';
 

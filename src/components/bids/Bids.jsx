@@ -1,6 +1,6 @@
 import React from 'react'
 import './bids.css'
-import { AiFillHeart,AiOutlineHeart } from "react-icons/ai";
+import { AiFillHeart } from "react-icons/ai";
 import { Link } from 'react-router-dom';
 
 const Bids = ({title, items = []}) => {
