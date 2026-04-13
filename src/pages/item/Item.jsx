@@ -1,15 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './item.css';
 
 import { useParams, Link } from 'react-router-dom';
-import { MOCK_ITEMS } from '../../data/mockData';
+import { getNFTs } from '../../firebase';
 
 const Item = () => {
   const { id } = useParams();
-  const nft = MOCK_ITEMS.find((item) => item.id === id);
+  const [nft, setNft] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchItem = async () => {
+      try {
+        const nfts = await getNFTs();
+        const foundItem = nfts.find((item) => item.id === id || item.firebaseId === id);
+        setNft(foundItem);
+      } catch (error) {
+        console.error("Error fetching item:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchItem();
+  }, [id]);
+
+  if (loading) {
+    return <div className='item section__padding'><h1 style={{ color: 'white', textAlign: 'center' }}>Loading NFT Details...</h1></div>;
+  }
 
   if (!nft) {
-    return <div className='item section__padding'><h1>Item not found</h1></div>;
+    return <div className='item section__padding'><h1 style={{ color: 'white', textAlign: 'center' }}>Item not found</h1></div>;
   }
 
   return( 

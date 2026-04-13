@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './create.css';
 import Image from '../../assets/Image.png';
 import { MOCK_ITEMS, CREATORS } from '../../data/mockData';
+import { addNFT } from '../../firebase';
 
 const Create = () => {
   const navigate = useNavigate();
@@ -12,8 +13,9 @@ const Create = () => {
     creatorName: '',
   });
   const [imageFile, setImageFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.creatorName) {
       alert("Please fill all required fields!");
@@ -26,18 +28,46 @@ const Create = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
+    let base64Image = Image; // Default image
+    
+    // Convert image to base64 for database persistence
+    if (imageFile) {
+      const reader = new FileReader();
+      const loadPromise = new Promise((resolve) => {
+          reader.onloadend = () => {
+              resolve(reader.result);
+          };
+      });
+      reader.readAsDataURL(imageFile);
+      base64Image = await loadPromise;
+    }
+
     const newItem = {
       id: Math.random().toString(36).substr(2, 9),
       title: formData.name,
       price: parseFloat(formData.price),
       likes: 0,
-      image: imageFile ? URL.createObjectURL(imageFile) : Image,
+      image: base64Image,
       creator: creator
     };
 
-    MOCK_ITEMS.unshift(newItem); // Add to the beginning so it shows up first
-    alert("Item created successfully!");
-    navigate("/");
+    try {
+      // Add a 10 second timeout to prevent hanging if the database isn't initialized
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Database connection timed out. Make sure your browser is refreshed, and check the Database Rules!")), 10000)
+      );
+      
+      await Promise.race([addNFT(newItem), timeoutPromise]);
+      alert("Item created successfully!");
+      navigate("/");
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      alert("Failed to create item: " + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,7 +129,9 @@ const Create = () => {
             </div>
           </div>
 
-          <button className='writeButton' type="submit">Create Item</button>
+          <button className='writeButton' type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Item"}
+          </button>
         </form>
       </div>
     </div>

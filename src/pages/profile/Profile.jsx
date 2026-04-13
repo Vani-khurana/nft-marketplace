@@ -1,21 +1,40 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './profile.css';
 import profile_banner from '../../assets/profile_banner.png';
 import profile_pic from '../../assets/profile.jpg';
 import Bids from '../../components/bids/Bids';
 import { useParams } from 'react-router-dom';
-import { MOCK_ITEMS, CREATORS } from '../../data/mockData';
+import { getNFTs } from '../../firebase';
 
 const Profile = () => {
   const { id } = useParams();
-  
-  const creator = useMemo(() => {
-    return CREATORS.find(c => c.name.toLowerCase() === (id || '').toLowerCase());
-  }, [id]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const nfts = await getNFTs();
+        setItems(nfts);
+      } catch (error) {
+        console.error("Error fetching creator items:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchItems();
+  }, []);
 
   const creatorItems = useMemo(() => {
-    return MOCK_ITEMS.filter(item => item.creator && item.creator.name.toLowerCase() === (id || '').toLowerCase());
-  }, [id]);
+    return items.filter(item => item.creator && item.creator.name.toLowerCase() === (id || '').toLowerCase());
+  }, [id, items]);
+
+  const creator = useMemo(() => {
+    if (creatorItems.length > 0 && creatorItems[0].creator) {
+      return creatorItems[0].creator;
+    }
+    return null;
+  }, [creatorItems]);
 
   const displayPic = creator ? creator.image : profile_pic;
   const displayName = creator ? creator.name : (id || 'Unknown Creator');
@@ -41,7 +60,11 @@ const Profile = () => {
             <option>High to Low</option>
           </select>
         </div>
-        <Bids title={`${displayName}'s Items`} items={creatorItems} />
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '50px', color: 'white' }}>Loading profile...</div>
+        ) : (
+          <Bids title={`${displayName}'s Items`} items={creatorItems} />
+        )}
       </div>
     </div>
   );
