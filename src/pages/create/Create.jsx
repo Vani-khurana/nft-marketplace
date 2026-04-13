@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './create.css';
 import Image from '../../assets/Image.png';
-import { MOCK_ITEMS, CREATORS } from '../../data/mockData';
+import { CREATORS } from '../../data/mockData';
 import { addNFT } from '../../firebase';
 
 const Create = () => {
